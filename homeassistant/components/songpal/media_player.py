@@ -16,6 +16,7 @@ from songpal import (
 import voluptuous as vol
 
 from homeassistant.components.media_player import (
+    MediaPlayerDeviceClass,
     MediaPlayerEntity,
     MediaPlayerEntityFeature,
     MediaPlayerState,
@@ -101,6 +102,7 @@ class SongpalEntity(MediaPlayerEntity):
     )
     _attr_has_entity_name = True
     _attr_name = None
+    _attr_device_class = MediaPlayerDeviceClass.RECEIVER
 
     def __init__(self, name, device):
         """Init."""
@@ -141,13 +143,13 @@ class SongpalEntity(MediaPlayerEntity):
             self.async_write_ha_state()
 
         async def _source_changed(content: ContentChange):
-            _LOGGER.debug("Source changed: %s", content)
-            if content.is_input:
-                self._active_source = self._sources[content.uri]
-                _LOGGER.debug("New active source: %s", self._active_source)
-                self.async_write_ha_state()
-            else:
-                _LOGGER.debug("Got non-handled content change: %s", content)
+            # if content.is_input:
+            uri_path = content.uri.split("?")[0]
+            self._active_source = self._sources[uri_path]
+            _LOGGER.debug("New active source: %s", self._active_source)
+            self.async_write_ha_state()
+            # else:
+            #    _LOGGER.debug("Got non-handled content change: %s", content)
 
         async def _power_changed(power: PowerChange):
             _LOGGER.debug("Power changed: %s", power)
@@ -265,6 +267,21 @@ class SongpalEntity(MediaPlayerEntity):
                 self._sources[input_.uri] = input_
                 if input_.active:
                     self._active_source = input_
+
+            active_source_uri = (
+                await self._dev.get_available_playback_functions(output="")
+            )[0].uri
+            _LOGGER.debug("Got active source: %s", active_source_uri)
+
+            schemes = await self._dev.get_schemes()
+            for scheme in schemes:
+                if scheme.scheme != "extInput":
+                    sources = await self._dev.get_source_list(scheme=scheme.scheme)
+                    _LOGGER.debug("Got sources: %s", sources)
+                    for source in sources:
+                        self._sources[source.source] = source
+                        if source.source == active_source_uri:
+                            self._active_source = source
 
             _LOGGER.debug("Active source: %s", self._active_source)
 
