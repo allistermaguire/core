@@ -98,7 +98,6 @@ class SongpalEntity(MediaPlayerEntity):
     )
     _attr_has_entity_name = True
     _attr_name = None
-    _attr_device_class = MediaPlayerDeviceClass.RECEIVER
 
     def __init__(self, name, device):
         """Init."""
