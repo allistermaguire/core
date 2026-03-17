@@ -13,7 +13,7 @@ from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import SimpliSafe
 from .const import DOMAIN, LOGGER
@@ -31,7 +31,9 @@ WEBSOCKET_EVENTS_TO_LISTEN_FOR = (EVENT_LOCK_LOCKED, EVENT_LOCK_UNLOCKED)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up SimpliSafe locks based on a config entry."""
     simplisafe = hass.data[DOMAIN][entry.entry_id]
@@ -106,7 +108,7 @@ class SimpliSafeLock(SimpliSafeEntity, LockEntity):
         """Update the entity when new data comes from the websocket."""
         assert event.event_type
 
-        if state := STATE_MAP_FROM_WEBSOCKET_EVENT.get(event.event_type) is not None:
+        if (state := STATE_MAP_FROM_WEBSOCKET_EVENT.get(event.event_type)) is not None:
             self._attr_is_locked = state
             self.async_reset_error_count()
         else:

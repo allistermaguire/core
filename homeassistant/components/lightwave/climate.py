@@ -55,7 +55,6 @@ class LightwaveTrv(ClimateEntity):
     )
     _attr_target_temperature_step = 0.5
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
-    _enable_turn_on_off_backwards_compatibility = False
 
     def __init__(self, name, device_id, lwlink, serial):
         """Initialize LightwaveTrv entity."""
@@ -91,7 +90,7 @@ class LightwaveTrv(ClimateEntity):
                 self._attr_hvac_action = HVACAction.OFF
 
     @property
-    def target_temperature(self):
+    def target_temperature(self) -> float | None:
         """Target room temperature."""
         if self._inhibit > 0:
             # If we get an update before the new temp has

@@ -12,25 +12,19 @@ from PyViCare.PyViCareDeviceConfig import PyViCareDeviceConfig
 from PyViCare.PyViCareHeatingDevice import (
     HeatingDeviceWithComponent as PyViCareHeatingDeviceComponent,
 )
-from PyViCare.PyViCareUtils import (
-    PyViCareInvalidDataError,
-    PyViCareNotSupportedFeatureError,
-    PyViCareRateLimitError,
-)
-import requests
+from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import DEVICE_LIST, DOMAIN
 from .entity import ViCareEntity
-from .types import ViCareDevice, ViCareRequiredKeysMixin
+from .types import ViCareConfigEntry, ViCareDevice, ViCareRequiredKeysMixin
 from .utils import (
     get_burners,
     get_circuits,
@@ -108,6 +102,48 @@ GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
         device_class=BinarySensorDeviceClass.RUNNING,
         value_getter=lambda api: api.getDomesticHotWaterPumpActive(),
     ),
+    ViCareBinarySensorEntityDescription(
+        key="one_time_charge",
+        translation_key="one_time_charge",
+        device_class=BinarySensorDeviceClass.RUNNING,
+        value_getter=lambda api: api.getOneTimeCharge(),
+    ),
+    ViCareBinarySensorEntityDescription(
+        key="device_error",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        value_getter=lambda api: len(api.getDeviceErrors()) > 0,
+    ),
+    ViCareBinarySensorEntityDescription(
+        key="identification_mode",
+        translation_key="identification_mode",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_getter=lambda api: api.getIdentification(),
+        entity_registry_enabled_default=False,
+    ),
+    ViCareBinarySensorEntityDescription(
+        key="mounting_mode",
+        translation_key="mounting_mode",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_getter=lambda api: api.getMountingMode(),
+        entity_registry_enabled_default=False,
+    ),
+    ViCareBinarySensorEntityDescription(
+        key="child_safety_lock_mode",
+        translation_key="child_safety_lock_mode",
+        value_getter=lambda api: api.getChildLock() == "active",
+        entity_registry_enabled_default=False,
+    ),
+    ViCareBinarySensorEntityDescription(
+        key="valve",
+        translation_key="valve",
+        device_class=BinarySensorDeviceClass.DOOR,
+        value_getter=lambda api: api.isValveOpen(),
+    ),
+    ViCareBinarySensorEntityDescription(
+        key="ventilation_frost_protection",
+        translation_key="ventilation_frost_protection",
+        value_getter=lambda api: api.getHeatExchangerFrostProtectionActive(),
+    ),
 )
 
 
@@ -127,7 +163,7 @@ def _build_entities(
                 device.api,
             )
             for description in GLOBAL_SENSORS
-            if is_supported(description.key, description, device.api)
+            if is_supported(description.key, description.value_getter, device.api)
         )
         # add component entities
         for component_list, entity_description_list in (
@@ -145,23 +181,21 @@ def _build_entities(
                 )
                 for component in component_list
                 for description in entity_description_list
-                if is_supported(description.key, description, component)
+                if is_supported(description.key, description.value_getter, component)
             )
     return entities
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    config_entry: ViCareConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Create the ViCare binary sensor devices."""
-    device_list = hass.data[DOMAIN][config_entry.entry_id][DEVICE_LIST]
-
     async_add_entities(
         await hass.async_add_executor_job(
             _build_entities,
-            device_list,
+            config_entry.runtime_data.devices,
         )
     )
 
@@ -192,14 +226,5 @@ class ViCareBinarySensor(ViCareEntity, BinarySensorEntity):
 
     def update(self) -> None:
         """Update state of sensor."""
-        try:
-            with suppress(PyViCareNotSupportedFeatureError):
-                self._attr_is_on = self.entity_description.value_getter(self._api)
-        except requests.exceptions.ConnectionError:
-            _LOGGER.error("Unable to retrieve data from ViCare server")
-        except ValueError:
-            _LOGGER.error("Unable to decode data from ViCare server")
-        except PyViCareRateLimitError as limit_exception:
-            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
-        except PyViCareInvalidDataError as invalid_data_exception:
-            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
+        with self.vicare_api_handler(), suppress(PyViCareNotSupportedFeatureError):
+            self._attr_is_on = self.entity_description.value_getter(self._api)

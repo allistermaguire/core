@@ -22,7 +22,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import SIGNAL_ADD_ENTITIES
 from .entity import InsteonEntity
@@ -46,7 +46,7 @@ SENSOR_TYPES = {
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the Insteon binary sensors from a config entry."""
 
@@ -80,6 +80,6 @@ class InsteonBinarySensorEntity(InsteonEntity, BinarySensorEntity):
         self._attr_device_class = SENSOR_TYPES.get(self._insteon_device_group.name)
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return the boolean response if the node is on."""
         return bool(self._insteon_device_group.value)

@@ -13,7 +13,7 @@ from homeassistant.components.sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -29,6 +29,19 @@ class AnalyticsSensorEntityDescription(SensorEntityDescription):
     value_fn: Callable[[AnalyticsData], StateType]
 
 
+def get_app_entity_description(
+    name_slug: str,
+) -> AnalyticsSensorEntityDescription:
+    """Get app entity description."""
+    return AnalyticsSensorEntityDescription(
+        key=f"app_{name_slug}_active_installations",
+        translation_key="apps",
+        name=name_slug,
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda data: data.apps.get(name_slug),
+    )
+
+
 def get_core_integration_entity_description(
     domain: str, name: str
 ) -> AnalyticsSensorEntityDescription:
@@ -38,7 +51,6 @@ def get_core_integration_entity_description(
         translation_key="core_integrations",
         name=name,
         state_class=SensorStateClass.TOTAL,
-        native_unit_of_measurement="active installations",
         value_fn=lambda data: data.core_integrations.get(domain),
     )
 
@@ -52,7 +64,6 @@ def get_custom_integration_entity_description(
         translation_key="custom_integrations",
         translation_placeholders={"custom_integration_domain": domain},
         state_class=SensorStateClass.TOTAL,
-        native_unit_of_measurement="active installations",
         value_fn=lambda data: data.custom_integrations.get(domain),
     )
 
@@ -63,7 +74,6 @@ GENERAL_SENSORS = [
         translation_key="total_active_installations",
         entity_registry_enabled_default=False,
         state_class=SensorStateClass.TOTAL,
-        native_unit_of_measurement="active installations",
         value_fn=lambda data: data.active_installations,
     ),
     AnalyticsSensorEntityDescription(
@@ -71,7 +81,6 @@ GENERAL_SENSORS = [
         translation_key="total_reports_integrations",
         entity_registry_enabled_default=False,
         state_class=SensorStateClass.TOTAL,
-        native_unit_of_measurement="active installations",
         value_fn=lambda data: data.reports_integrations,
     ),
 ]
@@ -80,7 +89,7 @@ GENERAL_SENSORS = [
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: AnalyticsInsightsConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Initialize the entries."""
 
@@ -89,6 +98,13 @@ async def async_setup_entry(
         analytics_data.coordinator
     )
     entities: list[HomeassistantAnalyticsSensor] = []
+    entities.extend(
+        HomeassistantAnalyticsSensor(
+            coordinator,
+            get_app_entity_description(app_name_slug),
+        )
+        for app_name_slug in coordinator.data.apps
+    )
     entities.extend(
         HomeassistantAnalyticsSensor(
             coordinator,

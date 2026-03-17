@@ -11,8 +11,8 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
-from . import NutConfigEntry
 from .const import DOMAIN
+from .coordinator import NutConfigEntry
 
 TO_REDACT = {CONF_PASSWORD, CONF_USERNAME}
 
@@ -39,8 +39,8 @@ async def async_get_config_entry_diagnostics(
     hass_device = device_registry.async_get_device(
         identifiers={(DOMAIN, hass_data.unique_id)}
     )
-    if not hass_device:
-        return data
+    # Device is always created
+    assert hass_device is not None
 
     data["device"] = {
         **attr.asdict(hass_device),

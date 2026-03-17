@@ -8,7 +8,7 @@ from datetime import timedelta
 from http import HTTPStatus
 from ipaddress import ip_address
 import json
-from unittest.mock import AsyncMock, _patch, patch
+from unittest.mock import _patch, patch
 
 from aiohttp.hdrs import CONTENT_TYPE
 from aiohttp.test_utils import TestClient
@@ -58,7 +58,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.typing import ConfigType
-import homeassistant.util.dt as dt_util
+from homeassistant.util import dt as dt_util
 from homeassistant.util.json import JsonObjectType
 
 from tests.common import (
@@ -103,12 +103,13 @@ ENTITY_IDS_BY_NUMBER = {
     "26": "light.living_room_rgbww_lights",
     "27": "media_player.group",
     "28": "media_player.browse",
+    "29": "media_player.search",
 }
 
 ENTITY_NUMBERS_BY_ID = {v: k for k, v in ENTITY_IDS_BY_NUMBER.items()}
 
 
-def patch_upnp() -> _patch[AsyncMock]:
+def patch_upnp() -> _patch:
     """Patch async_create_upnp_datagram_endpoint."""
     return patch(
         "homeassistant.components.emulated_hue.async_create_upnp_datagram_endpoint"
@@ -793,7 +794,10 @@ async def test_put_light_state(
     await hass_hue.services.async_call(
         light.DOMAIN,
         const.SERVICE_TURN_ON,
-        {const.ATTR_ENTITY_ID: "light.ceiling_lights", light.ATTR_COLOR_TEMP: 20},
+        {
+            const.ATTR_ENTITY_ID: "light.ceiling_lights",
+            light.ATTR_COLOR_TEMP_KELVIN: 50000,
+        },
         blocking=True,
     )
 
@@ -802,13 +806,17 @@ async def test_put_light_state(
     )
 
     assert (
-        hass_hue.states.get("light.ceiling_lights").attributes[light.ATTR_COLOR_TEMP]
-        == 50
+        hass_hue.states.get("light.ceiling_lights").attributes[
+            light.ATTR_COLOR_TEMP_KELVIN
+        ]
+        == 20000
     )
 
     # mock light.turn_on call
     attributes = hass.states.get("light.ceiling_lights").attributes
-    supported_features = attributes[ATTR_SUPPORTED_FEATURES] | light.SUPPORT_TRANSITION
+    supported_features = (
+        attributes[ATTR_SUPPORTED_FEATURES] | light.LightEntityFeature.TRANSITION
+    )
     attributes = {**attributes, ATTR_SUPPORTED_FEATURES: supported_features}
     hass.states.async_set("light.ceiling_lights", STATE_ON, attributes)
     call_turn_on = async_mock_service(hass, "light", "turn_on")
@@ -1785,14 +1793,14 @@ async def test_get_light_state_when_none(
             light.ATTR_BRIGHTNESS: None,
             light.ATTR_RGB_COLOR: None,
             light.ATTR_HS_COLOR: None,
-            light.ATTR_COLOR_TEMP: None,
+            light.ATTR_COLOR_TEMP_KELVIN: None,
             light.ATTR_XY_COLOR: None,
             light.ATTR_SUPPORTED_COLOR_MODES: [
-                light.COLOR_MODE_COLOR_TEMP,
-                light.COLOR_MODE_HS,
-                light.COLOR_MODE_XY,
+                light.ColorMode.COLOR_TEMP,
+                light.ColorMode.HS,
+                light.ColorMode.XY,
             ],
-            light.ATTR_COLOR_MODE: light.COLOR_MODE_XY,
+            light.ATTR_COLOR_MODE: light.ColorMode.XY,
         },
     )
 
@@ -1813,14 +1821,14 @@ async def test_get_light_state_when_none(
             light.ATTR_BRIGHTNESS: None,
             light.ATTR_RGB_COLOR: None,
             light.ATTR_HS_COLOR: None,
-            light.ATTR_COLOR_TEMP: None,
+            light.ATTR_COLOR_TEMP_KELVIN: None,
             light.ATTR_XY_COLOR: None,
             light.ATTR_SUPPORTED_COLOR_MODES: [
-                light.COLOR_MODE_COLOR_TEMP,
-                light.COLOR_MODE_HS,
-                light.COLOR_MODE_XY,
+                light.ColorMode.COLOR_TEMP,
+                light.ColorMode.HS,
+                light.ColorMode.XY,
             ],
-            light.ATTR_COLOR_MODE: light.COLOR_MODE_XY,
+            light.ATTR_COLOR_MODE: light.ColorMode.XY,
         },
     )
 

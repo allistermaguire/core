@@ -1,5 +1,7 @@
 """Support for Motionblinds sensors."""
 
+from typing import Any
+
 from motionblinds import DEVICE_TYPES_WIFI
 from motionblinds.motion_blinds import DEVICE_TYPE_TDBU
 
@@ -15,7 +17,7 @@ from homeassistant.const import (
     EntityCategory,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN, KEY_COORDINATOR, KEY_GATEWAY
 from .entity import MotionCoordinatorEntity
@@ -26,7 +28,7 @@ ATTR_BATTERY_VOLTAGE = "battery_voltage"
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Perform the setup for Motionblinds."""
     entities: list[SensorEntity] = []
@@ -68,7 +70,7 @@ class MotionBatterySensor(MotionCoordinatorEntity, SensorEntity):
         return self._blind.battery_level
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return device specific state attributes."""
         return {ATTR_BATTERY_VOLTAGE: self._blind.battery_voltage}
 
@@ -92,7 +94,7 @@ class MotionTDBUBatterySensor(MotionBatterySensor):
         return self._blind.battery_level[self._motor[0]]
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return device specific state attributes."""
         attributes = {}
         if self._blind.battery_voltage is not None:

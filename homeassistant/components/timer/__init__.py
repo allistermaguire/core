@@ -19,15 +19,14 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import collection
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import collection, config_validation as cv
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.restore_state import RestoreEntity
 import homeassistant.helpers.service
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType, VolDictType
-import homeassistant.util.dt as dt_util
+from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -141,8 +140,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def reload_service_handler(service_call: ServiceCall) -> None:
         """Reload yaml entities."""
         conf = await component.async_prepare_reload(skip_reset=True)
-        if conf is None:
-            conf = {DOMAIN: {}}
         await yaml_collection.async_load(
             [{CONF_ID: id_, **cfg} for id_, cfg in conf.get(DOMAIN, {}).items()]
         )
@@ -375,6 +372,9 @@ class Timer(collection.CollectionEntity, RestoreEntity):
     @callback
     def async_cancel(self) -> None:
         """Cancel a timer."""
+        if self._state == STATUS_IDLE:
+            return
+
         if self._listener:
             self._listener()
             self._listener = None
@@ -390,13 +390,15 @@ class Timer(collection.CollectionEntity, RestoreEntity):
     @callback
     def async_finish(self) -> None:
         """Reset and updates the states, fire finished event."""
-        if self._state != STATUS_ACTIVE or self._end is None:
+        if self._state == STATUS_IDLE:
             return
 
         if self._listener:
             self._listener()
             self._listener = None
         end = self._end
+        if end is None:
+            end = dt_util.utcnow().replace(microsecond=0)
         self._state = STATUS_IDLE
         self._end = None
         self._remaining = None

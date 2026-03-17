@@ -25,7 +25,7 @@ from homeassistant.const import (
     STATE_ON,
 )
 from homeassistant.core import HomeAssistant, callback
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
@@ -174,7 +174,7 @@ class NetioSwitch(SwitchEntity):
         self.schedule_update_ha_state()
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return the switch's status."""
         return self.netio.states[int(self.outlet) - 1]
 

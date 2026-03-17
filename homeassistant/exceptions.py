@@ -6,6 +6,9 @@ from collections.abc import Callable, Generator, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from aiohttp import ClientResponse, ClientResponseError, RequestInfo
+from multidict import MultiMapping
+
 from .util.event_type import EventType
 
 if TYPE_CHECKING:
@@ -15,16 +18,15 @@ if TYPE_CHECKING:
 _function_cache: dict[str, Callable[[str, str, dict[str, str] | None], str]] = {}
 
 
-def import_async_get_exception_message() -> (
-    Callable[[str, str, dict[str, str] | None], str]
-):
+def import_async_get_exception_message() -> Callable[
+    [str, str, dict[str, str] | None], str
+]:
     """Return a method that can fetch a translated exception message.
 
     Defaults to English, requires translations to already be cached.
     """
 
-    # pylint: disable-next=import-outside-toplevel
-    from .helpers.translation import (
+    from .helpers.translation import (  # noqa: PLC0415
         async_get_exception_message as async_get_exception_message_import,
     )
 
@@ -174,7 +176,7 @@ class ConditionErrorIndex(ConditionError):
         """Yield an indented representation."""
         if self.total > 1:
             yield self._indent(
-                indent, f"In '{self.type}' (item {self.index+1} of {self.total}):"
+                indent, f"In '{self.type}' (item {self.index + 1} of {self.total}):"
             )
         else:
             yield self._indent(indent, f"In '{self.type}':")
@@ -217,6 +219,63 @@ class ConfigEntryNotReady(IntegrationError):
 
 class ConfigEntryAuthFailed(IntegrationError):
     """Error to indicate that config entry could not authenticate."""
+
+
+class OAuth2TokenRequestError(ClientResponseError, HomeAssistantError):
+    """Error to indicate that the OAuth 2.0 flow could not refresh token."""
+
+    def __init__(
+        self,
+        *,
+        request_info: RequestInfo,
+        history: tuple[ClientResponse, ...] = (),
+        status: int = 0,
+        message: str = "OAuth 2.0 token refresh failed",
+        headers: MultiMapping[str] | None = None,
+        domain: str,
+    ) -> None:
+        """Initialize OAuth2RefreshTokenFailed."""
+        ClientResponseError.__init__(
+            self,
+            request_info=request_info,
+            history=history,
+            status=status,
+            message=message,
+            headers=headers,
+        )
+        HomeAssistantError.__init__(self)
+        self.domain = domain
+        self.translation_domain = "homeassistant"
+        self.translation_key = "oauth2_helper_refresh_failed"
+        self.translation_placeholders = {"domain": domain}
+        self.generate_message = True
+
+
+class OAuth2TokenRequestTransientError(OAuth2TokenRequestError):
+    """Recoverable error to indicate flow could not refresh token."""
+
+    def __init__(self, *, domain: str, **kwargs: Any) -> None:
+        """Initialize OAuth2RefreshTokenTransientError."""
+        super().__init__(domain=domain, **kwargs)
+        self.translation_domain = "homeassistant"
+        self.translation_key = "oauth2_helper_refresh_transient"
+        self.translation_placeholders = {"domain": domain}
+        self.generate_message = True
+
+
+class OAuth2TokenRequestReauthError(OAuth2TokenRequestError):
+    """Non recoverable error to indicate the flow could not refresh token.
+
+    Re-authentication is required.
+    """
+
+    def __init__(self, *, domain: str, **kwargs: Any) -> None:
+        """Initialize OAuth2RefreshTokenReauthError."""
+        super().__init__(domain=domain, **kwargs)
+        self.translation_domain = "homeassistant"
+        self.translation_key = "oauth2_helper_reauth_required"
+        self.translation_placeholders = {"domain": domain}
+        self.generate_message = True
 
 
 class InvalidStateError(HomeAssistantError):
@@ -270,6 +329,25 @@ class ServiceNotFound(ServiceValidationError):
         self.generate_message = True
 
 
+class ServiceNotSupported(ServiceValidationError):
+    """Raised when an entity action is not supported."""
+
+    def __init__(self, domain: str, service: str, entity_id: str) -> None:
+        """Initialize ServiceNotSupported exception."""
+        super().__init__(
+            translation_domain="homeassistant",
+            translation_key="service_not_supported",
+            translation_placeholders={
+                "domain": domain,
+                "service": service,
+                "entity_id": entity_id,
+            },
+        )
+        self.domain = domain
+        self.service = service
+        self.generate_message = True
+
+
 class MaxLengthExceeded(HomeAssistantError):
     """Raised when a property value has exceeded the max character length."""
 
@@ -303,3 +381,20 @@ class DependencyError(HomeAssistantError):
             f"Could not setup dependencies: {', '.join(failed_dependencies)}",
         )
         self.failed_dependencies = failed_dependencies
+
+
+class UnsupportedStorageVersionError(HomeAssistantError):
+    """Raised when a storage file has a newer major version than expected."""
+
+    def __init__(
+        self, storage_key: str, found_version: int, max_supported_version: int
+    ) -> None:
+        """Initialize error."""
+        super().__init__(
+            f"Storage file {storage_key} has version {found_version}"
+            f" which is newer than the max supported version {max_supported_version};"
+            " upgrade Home Assistant or restore from a backup",
+        )
+        self.storage_key = storage_key
+        self.found_version = found_version
+        self.max_supported_version = max_supported_version

@@ -17,6 +17,8 @@ from homeassistant.const import CONF_NAME, CONF_REGION
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    DurationSelector,
+    DurationSelectorConfig,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -35,11 +37,13 @@ from .const import (
     CONF_INCL_FILTER,
     CONF_ORIGIN,
     CONF_REALTIME,
+    CONF_TIME_DELTA,
     CONF_UNITS,
     CONF_VEHICLE_TYPE,
     DEFAULT_FILTER,
     DEFAULT_NAME,
     DEFAULT_OPTIONS,
+    DEFAULT_TIME_DELTA,
     DOMAIN,
     IMPERIAL_UNITS,
     REGIONS,
@@ -82,6 +86,12 @@ OPTIONS_SCHEMA = vol.Schema(
         vol.Optional(CONF_AVOID_TOLL_ROADS): BooleanSelector(),
         vol.Optional(CONF_AVOID_SUBSCRIPTION_ROADS): BooleanSelector(),
         vol.Optional(CONF_AVOID_FERRIES): BooleanSelector(),
+        vol.Optional(CONF_TIME_DELTA): DurationSelector(
+            DurationSelectorConfig(
+                allow_negative=True,
+                enable_second=False,
+            )
+        ),
     }
 )
 
@@ -102,7 +112,9 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def default_options(hass: HomeAssistant) -> dict[str, str | bool | list[str]]:
+def default_options(
+    hass: HomeAssistant,
+) -> dict[str, str | bool | list[str] | dict[str, int]]:
     """Get the default options."""
     defaults = DEFAULT_OPTIONS.copy()
     if hass.config.units is US_CUSTOMARY_SYSTEM:
@@ -113,10 +125,6 @@ def default_options(hass: HomeAssistant) -> dict[str, str | bool | list[str]]:
 class WazeOptionsFlow(OptionsFlow):
     """Handle an options flow for Waze Travel Time."""
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize waze options flow."""
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input=None) -> ConfigFlowResult:
         """Handle the initial step."""
         if user_input is not None:
@@ -124,6 +132,8 @@ class WazeOptionsFlow(OptionsFlow):
                 user_input[CONF_INCL_FILTER] = DEFAULT_FILTER
             if user_input.get(CONF_EXCL_FILTER) is None:
                 user_input[CONF_EXCL_FILTER] = DEFAULT_FILTER
+            if user_input.get(CONF_TIME_DELTA) is None:
+                user_input[CONF_TIME_DELTA] = DEFAULT_TIME_DELTA
             return self.async_create_entry(
                 title="",
                 data=user_input,
@@ -141,6 +151,7 @@ class WazeConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Waze Travel Time."""
 
     VERSION = 2
+    MINOR_VERSION = 2
 
     @staticmethod
     @callback
@@ -148,7 +159,7 @@ class WazeConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> WazeOptionsFlow:
         """Get the options flow for this handler."""
-        return WazeOptionsFlow(config_entry)
+        return WazeOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None

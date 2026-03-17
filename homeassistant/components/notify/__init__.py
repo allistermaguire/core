@@ -8,14 +8,14 @@ from functools import partial
 import logging
 from typing import Any, final, override
 
-from propcache import cached_property
+from propcache.api import cached_property
 import voluptuous as vol
 
-import homeassistant.components.persistent_notification as pn
+from homeassistant.components import persistent_notification as pn
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_PLATFORM, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant, ServiceCall
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -161,9 +161,9 @@ class NotifyEntity(RestoreEntity):
 
         Should not be overridden, handle setting last notification timestamp.
         """
+        await self.async_send_message(**kwargs)
         self.__set_state(dt_util.utcnow().isoformat())
         self.async_write_ha_state()
-        await self.async_send_message(**kwargs)
 
     def send_message(self, message: str, title: str | None = None) -> None:
         """Send a message."""

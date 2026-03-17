@@ -12,20 +12,14 @@ from PyViCare.PyViCareUtils import (
 )
 import voluptuous as vol
 
-from homeassistant.components import dhcp
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_CLIENT_ID, CONF_PASSWORD, CONF_USERNAME
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.device_registry import format_mac
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
-from . import vicare_login
-from .const import (
-    CONF_HEATING_TYPE,
-    DEFAULT_HEATING_TYPE,
-    DOMAIN,
-    VICARE_NAME,
-    HeatingType,
-)
+from .const import DOMAIN, VICARE_NAME, VIESSMANN_DEVELOPER_PORTAL
+from .utils import login
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,9 +33,6 @@ REAUTH_SCHEMA = vol.Schema(
 USER_SCHEMA = REAUTH_SCHEMA.extend(
     {
         vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE.value): vol.In(
-            [e.value for e in HeatingType]
-        ),
     }
 )
 
@@ -50,7 +41,7 @@ class ViCareConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for ViCare."""
 
     VERSION = 1
-    entry: ConfigEntry | None
+    MINOR_VERSION = 2
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -63,16 +54,17 @@ class ViCareConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                await self.hass.async_add_executor_job(
-                    vicare_login, self.hass, user_input
-                )
-            except (PyViCareInvalidConfigurationError, PyViCareInvalidCredentialsError):
+                await self.hass.async_add_executor_job(login, self.hass, user_input)
+            except PyViCareInvalidConfigurationError, PyViCareInvalidCredentialsError:
                 errors["base"] = "invalid_auth"
             else:
                 return self.async_create_entry(title=VICARE_NAME, data=user_input)
 
         return self.async_show_form(
             step_id="user",
+            description_placeholders={
+                "viessmann_developer_portal": VIESSMANN_DEVELOPER_PORTAL
+            },
             data_schema=USER_SCHEMA,
             errors=errors,
         )
@@ -81,7 +73,6 @@ class ViCareConfigFlow(ConfigFlow, domain=DOMAIN):
         self, entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
         """Handle re-authentication with ViCare."""
-        self.entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
@@ -89,36 +80,34 @@ class ViCareConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Confirm re-authentication with ViCare."""
         errors: dict[str, str] = {}
-        assert self.entry is not None
 
+        reauth_entry = self._get_reauth_entry()
         if user_input:
             data = {
-                **self.entry.data,
+                **reauth_entry.data,
                 **user_input,
             }
 
             try:
-                await self.hass.async_add_executor_job(vicare_login, self.hass, data)
-            except (PyViCareInvalidConfigurationError, PyViCareInvalidCredentialsError):
+                await self.hass.async_add_executor_job(login, self.hass, data)
+            except PyViCareInvalidConfigurationError, PyViCareInvalidCredentialsError:
                 errors["base"] = "invalid_auth"
             else:
-                self.hass.config_entries.async_update_entry(
-                    self.entry,
-                    data=data,
-                )
-                await self.hass.config_entries.async_reload(self.entry.entry_id)
-                return self.async_abort(reason="reauth_successful")
+                return self.async_update_reload_and_abort(reauth_entry, data=data)
 
         return self.async_show_form(
             step_id="reauth_confirm",
+            description_placeholders={
+                "viessmann_developer_portal": VIESSMANN_DEVELOPER_PORTAL
+            },
             data_schema=self.add_suggested_values_to_schema(
-                REAUTH_SCHEMA, self.entry.data
+                REAUTH_SCHEMA, reauth_entry.data
             ),
             errors=errors,
         )
 
     async def async_step_dhcp(
-        self, discovery_info: dhcp.DhcpServiceInfo
+        self, discovery_info: DhcpServiceInfo
     ) -> ConfigFlowResult:
         """Invoke when a Viessmann MAC address is discovered on the network."""
         formatted_mac = format_mac(discovery_info.macaddress)

@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_TYPE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util.dt import utcnow
 
 from .const import DOMAIN, TYPE_ASTRONOMICAL
@@ -37,7 +37,7 @@ HEMISPHERE_SEASON_SWAP = {
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the platform from config entry."""
     hemisphere = EQUATOR
@@ -97,7 +97,7 @@ class SeasonSensorEntity(SensorEntity):
         self.hemisphere = hemisphere
         self.type = entry.data[CONF_TYPE]
         self._attr_device_info = DeviceInfo(
-            name="Season",
+            translation_key="season",
             identifiers={(DOMAIN, entry.entry_id)},
             entry_type=DeviceEntryType.SERVICE,
         )

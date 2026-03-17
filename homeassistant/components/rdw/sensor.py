@@ -16,13 +16,11 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_LICENSE_PLATE, DOMAIN
+from .coordinator import RDWDataUpdateCoordinator
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -51,10 +49,10 @@ SENSORS: tuple[RDWSensorEntityDescription, ...] = (
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up RDW sensors based on a config entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: RDWDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         RDWSensorEntity(
             coordinator=coordinator,
@@ -65,7 +63,7 @@ async def async_setup_entry(
     )
 
 
-class RDWSensorEntity(CoordinatorEntity[DataUpdateCoordinator[Vehicle]], SensorEntity):
+class RDWSensorEntity(CoordinatorEntity[RDWDataUpdateCoordinator], SensorEntity):
     """Defines an RDW sensor."""
 
     entity_description: RDWSensorEntityDescription
@@ -74,7 +72,7 @@ class RDWSensorEntity(CoordinatorEntity[DataUpdateCoordinator[Vehicle]], SensorE
     def __init__(
         self,
         *,
-        coordinator: DataUpdateCoordinator[Vehicle],
+        coordinator: RDWDataUpdateCoordinator,
         license_plate: str,
         description: RDWSensorEntityDescription,
     ) -> None:

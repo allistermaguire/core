@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from ipaddress import ip_address
-from types import MappingProxyType
 from typing import Any
 from urllib.parse import urlsplit
 
 import voluptuous as vol
 
-from homeassistant.components import dhcp, ssdp, zeroconf
 from homeassistant.config_entries import (
     SOURCE_IGNORE,
     SOURCE_REAUTH,
@@ -18,7 +16,7 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlowWithConfigEntry,
+    OptionsFlow,
 )
 from homeassistant.const import (
     CONF_HOST,
@@ -32,6 +30,14 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import format_mac
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
+from homeassistant.helpers.service_info.ssdp import (
+    ATTR_UPNP_FRIENDLY_NAME,
+    ATTR_UPNP_PRESENTATION_URL,
+    ATTR_UPNP_SERIAL,
+    SsdpServiceInfo,
+)
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from homeassistant.helpers.typing import VolDictType
 from homeassistant.util.network import is_link_local
 
@@ -41,27 +47,29 @@ from .const import (
     CONF_VIDEO_SOURCE,
     DEFAULT_STREAM_PROFILE,
     DEFAULT_VIDEO_SOURCE,
-    DOMAIN as AXIS_DOMAIN,
+    DOMAIN,
 )
 from .errors import AuthenticationRequired, CannotConnect
 from .hub import AxisHub, get_axis_api
 
-AXIS_OUI = {"00:40:8c", "ac:cc:8e", "b8:a4:4f"}
+AXIS_OUI = {"00:40:8c", "ac:cc:8e", "b8:a4:4f", "e8:27:25"}
 DEFAULT_PORT = 443
 DEFAULT_PROTOCOL = "https"
 PROTOCOL_CHOICES = ["https", "http"]
 
 
-class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
+class AxisFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a Axis config flow."""
 
     VERSION = 3
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: ConfigEntry) -> AxisOptionsFlowHandler:
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> AxisOptionsFlowHandler:
         """Get the options flow for this handler."""
-        return AxisOptionsFlowHandler(config_entry)
+        return AxisOptionsFlowHandler()
 
     def __init__(self) -> None:
         """Initialize the Axis config flow."""
@@ -79,7 +87,7 @@ class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
 
         if user_input is not None:
             try:
-                api = await get_axis_api(self.hass, MappingProxyType(user_input))
+                api = await get_axis_api(self.hass, user_input)
 
             except AuthenticationRequired:
                 errors["base"] = "invalid_auth"
@@ -101,12 +109,12 @@ class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
 
                 if self.source == SOURCE_REAUTH:
                     self._abort_if_unique_id_mismatch()
-                    return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         self._get_reauth_entry(), data_updates=config
                     )
                 if self.source == SOURCE_RECONFIGURE:
                     self._abort_if_unique_id_mismatch()
-                    return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         self._get_reconfigure_entry(), data_updates=config
                     )
                 self._abort_if_unique_id_configured()
@@ -138,7 +146,7 @@ class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
         model = self.config[CONF_MODEL]
         same_model = [
             entry.data[CONF_NAME]
-            for entry in self.hass.config_entries.async_entries(AXIS_DOMAIN)
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
             if entry.source != SOURCE_IGNORE and entry.data[CONF_MODEL] == model
         ]
 
@@ -188,7 +196,7 @@ class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
         return await self.async_step_user()
 
     async def async_step_dhcp(
-        self, discovery_info: dhcp.DhcpServiceInfo
+        self, discovery_info: DhcpServiceInfo
     ) -> ConfigFlowResult:
         """Prepare configuration for a DHCP discovered Axis device."""
         return await self._process_discovered_device(
@@ -201,21 +209,21 @@ class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
         )
 
     async def async_step_ssdp(
-        self, discovery_info: ssdp.SsdpServiceInfo
+        self, discovery_info: SsdpServiceInfo
     ) -> ConfigFlowResult:
         """Prepare configuration for a SSDP discovered Axis device."""
-        url = urlsplit(discovery_info.upnp[ssdp.ATTR_UPNP_PRESENTATION_URL])
+        url = urlsplit(discovery_info.upnp[ATTR_UPNP_PRESENTATION_URL])
         return await self._process_discovered_device(
             {
                 CONF_HOST: url.hostname,
-                CONF_MAC: format_mac(discovery_info.upnp[ssdp.ATTR_UPNP_SERIAL]),
-                CONF_NAME: f"{discovery_info.upnp[ssdp.ATTR_UPNP_FRIENDLY_NAME]}",
+                CONF_MAC: format_mac(discovery_info.upnp[ATTR_UPNP_SERIAL]),
+                CONF_NAME: f"{discovery_info.upnp[ATTR_UPNP_FRIENDLY_NAME]}",
                 CONF_PORT: url.port,
             }
         )
 
     async def async_step_zeroconf(
-        self, discovery_info: zeroconf.ZeroconfServiceInfo
+        self, discovery_info: ZeroconfServiceInfo
     ) -> ConfigFlowResult:
         """Prepare configuration for a Zeroconf discovered Axis device."""
         return await self._process_discovered_device(
@@ -240,7 +248,7 @@ class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
         await self.async_set_unique_id(discovery_info[CONF_MAC])
 
         self._abort_if_unique_id_configured(
-            updates={CONF_HOST: discovery_info[CONF_HOST]}
+            updates={CONF_HOST: discovery_info[CONF_HOST]}, reload_on_update=False
         )
 
         self.context.update(
@@ -264,7 +272,7 @@ class AxisFlowHandler(ConfigFlow, domain=AXIS_DOMAIN):
         return await self.async_step_user()
 
 
-class AxisOptionsFlowHandler(OptionsFlowWithConfigEntry):
+class AxisOptionsFlowHandler(OptionsFlow):
     """Handle Axis device options."""
 
     config_entry: AxisConfigEntry
@@ -282,8 +290,7 @@ class AxisOptionsFlowHandler(OptionsFlowWithConfigEntry):
     ) -> ConfigFlowResult:
         """Manage the Axis device stream options."""
         if user_input is not None:
-            self.options.update(user_input)
-            return self.async_create_entry(title="", data=self.options)
+            return self.async_create_entry(data=self.config_entry.options | user_input)
 
         schema = {}
 

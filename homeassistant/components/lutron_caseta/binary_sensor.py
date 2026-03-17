@@ -1,5 +1,7 @@
 """Support for Lutron Caseta Occupancy/Vacancy Sensors."""
 
+from typing import Any
+
 from pylutron_caseta import OCCUPANCY_GROUP_OCCUPIED
 
 from homeassistant.components.binary_sensor import (
@@ -9,9 +11,9 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.const import ATTR_SUGGESTED_AREA
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import DOMAIN as CASETA_DOMAIN
+from . import DOMAIN
 from .const import CONFIG_URL, MANUFACTURER, UNASSIGNED_AREA
 from .entity import LutronCasetaEntity
 from .models import LutronCasetaConfigEntry
@@ -21,7 +23,7 @@ from .util import area_name_from_id
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: LutronCasetaConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the Lutron Caseta binary_sensor platform.
 
@@ -49,11 +51,11 @@ class LutronOccupancySensor(LutronCasetaEntity, BinarySensorEntity):
         name = f"{area} {device['device_name']}"
         self._attr_name = name
         self._attr_device_info = DeviceInfo(
-            identifiers={(CASETA_DOMAIN, self.unique_id)},
+            identifiers={(DOMAIN, self.unique_id)},
             manufacturer=MANUFACTURER,
             model="Lutron Occupancy",
             name=self.name,
-            via_device=(CASETA_DOMAIN, self._bridge_device["serial"]),
+            via_device=(DOMAIN, self._bridge_device["serial"]),
             configuration_url=CONFIG_URL,
             entry_type=DeviceEntryType.SERVICE,
         )
@@ -61,7 +63,7 @@ class LutronOccupancySensor(LutronCasetaEntity, BinarySensorEntity):
             self._attr_device_info[ATTR_SUGGESTED_AREA] = area
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return the brightness of the light."""
         return self._device["status"] == OCCUPANCY_GROUP_OCCUPIED
 
@@ -83,6 +85,6 @@ class LutronOccupancySensor(LutronCasetaEntity, BinarySensorEntity):
         return f"occupancygroup_{self._bridge_unique_id}_{self.device_id}"
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
         return {"device_id": self.device_id}

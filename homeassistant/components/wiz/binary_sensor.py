@@ -14,12 +14,11 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import WizConfigEntry
 from .const import DOMAIN, SIGNAL_WIZ_PIR
+from .coordinator import WizConfigEntry, WizData
 from .entity import WizEntity
-from .models import WizData
 
 OCCUPANCY_UNIQUE_ID = "{}_occupancy"
 
@@ -27,7 +26,7 @@ OCCUPANCY_UNIQUE_ID = "{}_occupancy"
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: WizConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the WiZ binary sensor platform."""
     mac = entry.runtime_data.bulb.mac

@@ -6,13 +6,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from homeassistant import config_entries
-from homeassistant.components import dhcp
 from homeassistant.components.onvif import DOMAIN, config_flow
 from homeassistant.config_entries import SOURCE_DHCP
-from homeassistant.const import CONF_HOST, CONF_USERNAME
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from . import (
     HOST,
@@ -44,10 +44,10 @@ DISCOVERY = [
         "MAC": "ff:ee:dd:cc:bb:aa",
     },
 ]
-DHCP_DISCOVERY = dhcp.DhcpServiceInfo(
+DHCP_DISCOVERY = DhcpServiceInfo(
     hostname="any", ip="5.6.7.8", macaddress=MAC.lower().replace(":", "")
 )
-DHCP_DISCOVERY_SAME_IP = dhcp.DhcpServiceInfo(
+DHCP_DISCOVERY_SAME_IP = DhcpServiceInfo(
     hostname="any", ip="1.2.3.4", macaddress=MAC.lower().replace(":", "")
 )
 
@@ -687,10 +687,11 @@ async def test_discovered_by_dhcp_updates_host(
     assert config_entry.data[CONF_HOST] == "1.2.3.4"
     await hass.config_entries.async_unload(config_entry.entry_id)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_DHCP}, data=DHCP_DISCOVERY
-    )
-    await hass.async_block_till_done()
+    with patch("homeassistant.components.onvif.async_setup_entry", return_value=True):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_DHCP}, data=DHCP_DISCOVERY
+        )
+        await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
@@ -803,7 +804,8 @@ async def test_form_reauth(hass: HomeAssistant) -> None:
     assert result2["step_id"] == "reauth_confirm"
     assert result2["errors"] == {config_flow.CONF_PASSWORD: "auth_failed"}
     assert result2["description_placeholders"] == {
-        "error": "not authorized (subcodes:NotAuthorized)"
+        CONF_NAME: "Mock Title",
+        "error": "not authorized (subcodes:NotAuthorized)",
     }
 
     with (

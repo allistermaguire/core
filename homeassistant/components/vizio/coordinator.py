@@ -22,11 +22,16 @@ _LOGGER = logging.getLogger(__name__)
 class VizioAppsDataUpdateCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
     """Define an object to hold Vizio app config data."""
 
-    def __init__(self, hass: HomeAssistant, store: Store[list[dict[str, Any]]]) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        store: Store[list[dict[str, Any]]],
+    ) -> None:
         """Initialize."""
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=None,
             name=DOMAIN,
             update_interval=timedelta(days=1),
         )
@@ -34,10 +39,10 @@ class VizioAppsDataUpdateCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]
         self.fail_threshold = 10
         self.store = store
 
-    async def async_config_entry_first_refresh(self) -> None:
-        """Refresh data for the first time when a config entry is setup."""
+    async def async_setup(self) -> None:
+        """Load initial data from storage and register shutdown."""
+        await self.async_register_shutdown()
         self.data = await self.store.async_load() or APPS
-        await super().async_config_entry_first_refresh()
 
     async def _async_update_data(self) -> list[dict[str, Any]]:
         """Update data via library."""

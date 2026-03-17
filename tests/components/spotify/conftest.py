@@ -8,13 +8,8 @@ import pytest
 from spotifyaio.models import (
     Album,
     Artist,
-    ArtistResponse,
-    CategoriesResponse,
-    Category,
-    CategoryPlaylistResponse,
     Devices,
-    FeaturedPlaylistResponse,
-    NewReleasesResponse,
+    FollowedArtistResponse,
     NewReleasesResponseInner,
     PlaybackState,
     PlayedTrackResponse,
@@ -31,6 +26,7 @@ from spotifyaio.models import (
 )
 
 from homeassistant.components.application_credentials import (
+    DOMAIN as APPLICATION_CREDENTIALS_DOMAIN,
     ClientCredential,
     async_import_client_credential,
 )
@@ -74,13 +70,20 @@ def mock_config_entry(expires_at: int) -> MockConfigEntry:
 @pytest.fixture
 async def setup_credentials(hass: HomeAssistant) -> None:
     """Fixture to setup credentials."""
-    assert await async_setup_component(hass, "application_credentials", {})
+    assert await async_setup_component(hass, APPLICATION_CREDENTIALS_DOMAIN, {})
     await async_import_client_credential(
         hass,
         DOMAIN,
         ClientCredential("CLIENT_ID", "CLIENT_SECRET"),
         DOMAIN,
     )
+
+
+@pytest.fixture(autouse=True)
+async def patch_sleep() -> Generator[AsyncMock]:
+    """Fixture to setup credentials."""
+    with patch("homeassistant.components.spotify.media_player.AFTER_REQUEST_SLEEP", 0):
+        yield
 
 
 @pytest.fixture
@@ -127,7 +130,6 @@ def mock_spotify() -> Generator[AsyncMock]:
                 PlaybackState,
             ),
             ("current_user.json", "get_current_user", UserProfile),
-            ("category.json", "get_category", Category),
             ("playlist.json", "get_playlist", Playlist),
             ("album.json", "get_album", Album),
             ("artist.json", "get_artist", Artist),
@@ -136,21 +138,9 @@ def mock_spotify() -> Generator[AsyncMock]:
             getattr(client, method).return_value = obj.from_json(
                 load_fixture(fixture, DOMAIN)
             )
-        client.get_followed_artists.return_value = ArtistResponse.from_json(
+        client.get_followed_artists.return_value = FollowedArtistResponse.from_json(
             load_fixture("followed_artists.json", DOMAIN)
         ).artists.items
-        client.get_featured_playlists.return_value = FeaturedPlaylistResponse.from_json(
-            load_fixture("featured_playlists.json", DOMAIN)
-        ).playlists.items
-        client.get_categories.return_value = CategoriesResponse.from_json(
-            load_fixture("categories.json", DOMAIN)
-        ).categories.items
-        client.get_category_playlists.return_value = CategoryPlaylistResponse.from_json(
-            load_fixture("category_playlists.json", DOMAIN)
-        ).playlists.items
-        client.get_new_releases.return_value = NewReleasesResponse.from_json(
-            load_fixture("new_releases.json", DOMAIN)
-        ).albums.items
         client.get_devices.return_value = Devices.from_json(
             load_fixture("devices.json", DOMAIN)
         ).devices

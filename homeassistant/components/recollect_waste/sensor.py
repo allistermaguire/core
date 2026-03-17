@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from datetime import date
 
-from aiorecollect.client import PickupEvent
-
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -13,10 +11,10 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN, LOGGER
+from .coordinator import ReCollectWasteDataUpdateCoordinator
 from .entity import ReCollectWasteEntity
 from .util import async_get_pickup_type_names
 
@@ -39,12 +37,12 @@ SENSOR_DESCRIPTIONS = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up ReCollect Waste sensors based on a config entry."""
-    coordinator: DataUpdateCoordinator[list[PickupEvent]] = hass.data[DOMAIN][
-        entry.entry_id
-    ]
+    coordinator: ReCollectWasteDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     async_add_entities(
         ReCollectWasteSensor(coordinator, entry, description)
@@ -64,7 +62,7 @@ class ReCollectWasteSensor(ReCollectWasteEntity, SensorEntity):
 
     def __init__(
         self,
-        coordinator: DataUpdateCoordinator[list[PickupEvent]],
+        coordinator: ReCollectWasteDataUpdateCoordinator,
         entry: ConfigEntry,
         description: SensorEntityDescription,
     ) -> None:

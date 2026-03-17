@@ -6,6 +6,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -19,6 +20,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Charge port door',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -26,6 +28,7 @@
     'original_name': 'Charge port door',
     'platform': 'tessie',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'charge_state_charge_port_door_open',
     'unique_id': 'VINVINVIN-charge_state_charge_port_door_open',
@@ -37,6 +40,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Charge port door',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -54,6 +58,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -67,6 +72,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Frunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -74,6 +80,7 @@
     'original_name': 'Frunk',
     'platform': 'tessie',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 1>,
     'translation_key': 'vehicle_state_ft',
     'unique_id': 'VINVINVIN-vehicle_state_ft',
@@ -85,6 +92,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Frunk',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 1>,
     }),
     'context': <ANY>,
@@ -102,6 +110,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -115,6 +124,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Sunroof',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -122,6 +132,7 @@
     'original_name': 'Sunroof',
     'platform': 'tessie',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'vehicle_state_sun_roof_state',
     'unique_id': 'VINVINVIN-vehicle_state_sun_roof_state',
@@ -133,6 +144,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Sunroof',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -150,6 +162,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -163,6 +176,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Trunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -170,6 +184,7 @@
     'original_name': 'Trunk',
     'platform': 'tessie',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'vehicle_state_rt',
     'unique_id': 'VINVINVIN-vehicle_state_rt',
@@ -181,6 +196,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Trunk',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -198,6 +214,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -211,6 +228,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Vent windows',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -218,6 +236,7 @@
     'original_name': 'Vent windows',
     'platform': 'tessie',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'windows',
     'unique_id': 'VINVINVIN-windows',
@@ -229,6 +248,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Vent windows',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,

@@ -1,32 +1,56 @@
 """Tests for the Config Entry Flow helper."""
 
-from collections.abc import Generator
+import asyncio
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from unittest.mock import Mock, PropertyMock, patch
 
 import pytest
 
 from homeassistant import config_entries, data_entry_flow, setup
-from homeassistant.config import async_process_ha_core_config
 from homeassistant.core import HomeAssistant
+from homeassistant.core_config import async_process_ha_core_config
 from homeassistant.helpers import config_entry_flow
 
 from tests.common import MockConfigEntry, MockModule, mock_integration, mock_platform
 
 
+@contextmanager
+def _make_discovery_flow_conf(
+    has_discovered_devices: Callable[[], asyncio.Future[bool] | bool],
+) -> Generator[None]:
+    with patch.dict(config_entries.HANDLERS):
+        config_entry_flow.register_discovery_flow(
+            "test", "Test", has_discovered_devices
+        )
+        yield
+
+
 @pytest.fixture
-def discovery_flow_conf(hass: HomeAssistant) -> Generator[dict[str, bool]]:
-    """Register a handler."""
+def async_discovery_flow_conf(hass: HomeAssistant) -> Generator[dict[str, bool]]:
+    """Register a handler with an async discovery function."""
     handler_conf = {"discovered": False}
 
     async def has_discovered_devices(hass: HomeAssistant) -> bool:
         """Mock if we have discovered devices."""
         return handler_conf["discovered"]
 
-    with patch.dict(config_entries.HANDLERS):
-        config_entry_flow.register_discovery_flow(
-            "test", "Test", has_discovered_devices
-        )
+    with _make_discovery_flow_conf(has_discovered_devices):
         yield handler_conf
+
+
+@pytest.fixture
+def discovery_flow_conf(hass: HomeAssistant) -> Generator[dict[str, bool]]:
+    """Register a handler with a async friendly callback function."""
+    handler_conf = {"discovered": False}
+
+    def has_discovered_devices(hass: HomeAssistant) -> bool:
+        """Mock if we have discovered devices."""
+        return handler_conf["discovered"]
+
+    with _make_discovery_flow_conf(has_discovered_devices):
+        yield handler_conf
+    handler_conf = {"discovered": False}
 
 
 @pytest.fixture
@@ -73,6 +97,33 @@ async def test_user_has_confirmation(
 ) -> None:
     """Test user requires confirmation to setup."""
     discovery_flow_conf["discovered"] = True
+    mock_platform(hass, "test.config_flow", None)
+
+    result = await hass.config_entries.flow.async_init(
+        "test", context={"source": config_entries.SOURCE_USER}, data={}
+    )
+
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "confirm"
+
+    progress = hass.config_entries.flow.async_progress()
+    assert len(progress) == 1
+    assert progress[0]["flow_id"] == result["flow_id"]
+    assert progress[0]["context"] == {
+        "confirm_only": True,
+        "source": config_entries.SOURCE_USER,
+        "unique_id": "test",
+    }
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+
+
+async def test_user_has_confirmation_async_discovery_flow(
+    hass: HomeAssistant, async_discovery_flow_conf: dict[str, bool]
+) -> None:
+    """Test user requires confirmation to setup with an async has_discovered_devices."""
+    async_discovery_flow_conf["discovered"] = True
     mock_platform(hass, "test.config_flow", None)
 
     result = await hass.config_entries.flow.async_init(
@@ -459,3 +510,96 @@ async def test_webhook_create_cloudhook_aborts_not_connected(
 
     assert result["type"] == data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "cloud_not_connected"
+
+
+async def test_webhook_reconfigure_flow(
+    hass: HomeAssistant, webhook_flow_conf: None
+) -> None:
+    """Test webhook reconfigure flow."""
+    config_entry = MockConfigEntry(
+        domain="test_single",
+        data={
+            "webhook_id": "12345",
+            "cloudhook": False,
+            "other_entry_data": "not_changed",
+        },
+    )
+    config_entry.add_to_hass(hass)
+
+    flow = config_entries.HANDLERS["test_single"]()
+    flow.hass = hass
+    flow.context = {
+        "source": config_entries.SOURCE_RECONFIGURE,
+        "entry_id": config_entry.entry_id,
+    }
+
+    await async_process_ha_core_config(
+        hass,
+        {"external_url": "https://example.com"},
+    )
+
+    result = await flow.async_step_reconfigure()
+    assert result["type"] is data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+
+    result = await flow.async_step_reconfigure(user_input={})
+
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert result["description_placeholders"] == {
+        "webhook_url": "https://example.com/api/webhook/12345"
+    }
+    assert config_entry.data["webhook_id"] == "12345"
+    assert config_entry.data["cloudhook"] is False
+    assert config_entry.data["other_entry_data"] == "not_changed"
+
+
+async def test_webhook_reconfigure_cloudhook(
+    hass: HomeAssistant, webhook_flow_conf: None
+) -> None:
+    """Test reconfigure updates to cloudhook if subscribed."""
+    assert await setup.async_setup_component(hass, "cloud", {})
+
+    config_entry = MockConfigEntry(
+        domain="test_single", data={"webhook_id": "12345", "cloudhook": False}
+    )
+    config_entry.add_to_hass(hass)
+
+    flow = config_entries.HANDLERS["test_single"]()
+    flow.hass = hass
+    flow.context = {
+        "source": config_entries.SOURCE_RECONFIGURE,
+        "entry_id": config_entry.entry_id,
+    }
+
+    result = await flow.async_step_reconfigure()
+    assert result["type"] is data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+
+    with (
+        patch(
+            "hass_nabucasa.cloudhooks.Cloudhooks.async_create",
+            return_value={"cloudhook_url": "https://example.com"},
+        ) as mock_create,
+        patch(
+            "hass_nabucasa.Cloud.subscription_expired",
+            new_callable=PropertyMock(return_value=False),
+        ),
+        patch(
+            "hass_nabucasa.Cloud.is_logged_in",
+            new_callable=PropertyMock(return_value=True),
+        ),
+        patch(
+            "hass_nabucasa.iot_base.BaseIoT.connected",
+            new_callable=PropertyMock(return_value=True),
+        ),
+    ):
+        result = await flow.async_step_reconfigure(user_input={})
+
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert result["description_placeholders"] == {"webhook_url": "https://example.com"}
+    assert len(mock_create.mock_calls) == 1
+
+    assert config_entry.data["webhook_id"] == "12345"
+    assert config_entry.data["cloudhook"] is True

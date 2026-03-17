@@ -10,7 +10,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import CONF_USE_WEBHOOK, COORDINATOR, DOMAIN
 from .entity import PlaatoEntity
@@ -19,7 +19,7 @@ from .entity import PlaatoEntity
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Plaato from a config entry."""
 
@@ -49,7 +49,7 @@ class PlaatoBinarySensor(PlaatoEntity, BinarySensorEntity):
             self._attr_device_class = BinarySensorDeviceClass.OPENING
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return true if the binary sensor is on."""
         if self._coordinator is not None:
             return self._coordinator.data.binary_sensors.get(self._sensor_type)

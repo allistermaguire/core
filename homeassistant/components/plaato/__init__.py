@@ -22,7 +22,7 @@ from pyplaato.plaato import (
 import voluptuous as vol
 
 from homeassistant.components import webhook
-from homeassistant.components.sensor import DOMAIN as SENSOR
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_SCAN_INTERVAL,
@@ -32,7 +32,7 @@ from homeassistant.const import (
     UnitOfVolume,
 )
 from homeassistant.core import HomeAssistant, callback
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import (
@@ -57,17 +57,17 @@ _LOGGER = logging.getLogger(__name__)
 DEPENDENCIES = ["webhook"]
 
 SENSOR_UPDATE = f"{DOMAIN}_sensor_update"
-SENSOR_DATA_KEY = f"{DOMAIN}.{SENSOR}"
+SENSOR_DATA_KEY = f"{DOMAIN}.{SENSOR_DOMAIN}"
 
 WEBHOOK_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_DEVICE_NAME): cv.string,
         vol.Required(ATTR_DEVICE_ID): cv.positive_int,
         vol.Required(ATTR_TEMP_UNIT): vol.In(
-            UnitOfTemperature.CELSIUS, UnitOfTemperature.FAHRENHEIT
+            [UnitOfTemperature.CELSIUS, UnitOfTemperature.FAHRENHEIT]
         ),
         vol.Required(ATTR_VOLUME_UNIT): vol.In(
-            UnitOfVolume.LITERS, UnitOfVolume.GALLONS
+            [UnitOfVolume.LITERS, UnitOfVolume.GALLONS]
         ),
         vol.Required(ATTR_BPM): cv.positive_int,
         vol.Required(ATTR_TEMP): vol.Coerce(float),
@@ -121,7 +121,9 @@ async def async_setup_coordinator(hass: HomeAssistant, entry: ConfigEntry):
     else:
         update_interval = timedelta(minutes=DEFAULT_SCAN_INTERVAL)
 
-    coordinator = PlaatoCoordinator(hass, auth_token, device_type, update_interval)
+    coordinator = PlaatoCoordinator(
+        hass, entry, auth_token, device_type, update_interval
+    )
     await coordinator.async_config_entry_first_refresh()
 
     _set_entry_data(entry, hass, coordinator, auth_token)

@@ -17,9 +17,8 @@ from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, PRESSURE, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, IS_IN_BED, SLEEP_NUMBER
@@ -27,6 +26,7 @@ from .coordinator import (
     SleepIQData,
     SleepIQDataUpdateCoordinator,
     SleepIQPauseUpdateCoordinator,
+    SleepIQSleepDataCoordinator,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -95,16 +95,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await _async_migrate_unique_ids(hass, entry, gateway)
 
-    coordinator = SleepIQDataUpdateCoordinator(hass, gateway, email)
-    pause_coordinator = SleepIQPauseUpdateCoordinator(hass, gateway, email)
+    coordinator = SleepIQDataUpdateCoordinator(hass, entry, gateway)
+    pause_coordinator = SleepIQPauseUpdateCoordinator(hass, entry, gateway)
+    sleep_data_coordinator = SleepIQSleepDataCoordinator(hass, entry, gateway)
 
     # Call the SleepIQ API to refresh data
     await coordinator.async_config_entry_first_refresh()
     await pause_coordinator.async_config_entry_first_refresh()
+    await sleep_data_coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = SleepIQData(
         data_coordinator=coordinator,
         pause_coordinator=pause_coordinator,
+        sleep_data_coordinator=sleep_data_coordinator,
         client=gateway,
     )
 

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
 import logging
-from typing import Any, Concatenate, cast
+from typing import TYPE_CHECKING, Any, Concatenate, cast
 
 from renault_api.exceptions import RenaultException
 from renault_api.kamereon import models
@@ -17,6 +17,10 @@ from renault_api.renault_vehicle import RenaultVehicle
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
+
+if TYPE_CHECKING:
+    from . import RenaultConfigEntry
+    from .renault_hub import RenaultHub
 
 from .const import DOMAIN
 from .coordinator import RenaultDataUpdateCoordinator
@@ -39,7 +43,11 @@ def with_error_wrapping[**_P, _R](
         try:
             return await func(self, *args, **kwargs)
         except RenaultException as err:
-            raise HomeAssistantError(err) from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="unknown_error",
+                translation_placeholders={"error": str(err)},
+            ) from err
 
     return wrapper
 
@@ -64,12 +72,15 @@ class RenaultVehicleProxy:
     def __init__(
         self,
         hass: HomeAssistant,
+        config_entry: RenaultConfigEntry,
+        hub: RenaultHub,
         vehicle: RenaultVehicle,
         details: models.KamereonVehicleDetails,
         scan_interval: timedelta,
     ) -> None:
         """Initialise vehicle proxy."""
         self.hass = hass
+        self.config_entry = config_entry
         self._vehicle = vehicle
         self._details = details
         self._device_info = DeviceInfo(
@@ -82,6 +93,14 @@ class RenaultVehicleProxy:
         self.coordinators: dict[str, RenaultDataUpdateCoordinator] = {}
         self.hvac_target_temperature = 21
         self._scan_interval = scan_interval
+        self._hub = hub
+
+    def update_scan_interval(self, scan_interval: timedelta) -> None:
+        """Set the scan interval for the vehicle."""
+        if scan_interval != self._scan_interval:
+            self._scan_interval = scan_interval
+            for coordinator in self.coordinators.values():
+                coordinator.update_interval = scan_interval
 
     @property
     def details(self) -> models.KamereonVehicleDetails:
@@ -98,11 +117,11 @@ class RenaultVehicleProxy:
         self.coordinators = {
             coord.key: RenaultDataUpdateCoordinator(
                 self.hass,
+                self.config_entry,
+                self._hub,
                 LOGGER,
-                # Name of the data. For logging purposes.
                 name=f"{self.details.vin} {coord.key}",
                 update_method=coord.update_method(self._vehicle),
-                # Polling interval. Will only be polled if there are subscribers.
                 update_interval=self._scan_interval,
             )
             for coord in COORDINATORS
@@ -191,6 +210,16 @@ class RenaultVehicleProxy:
         """Set vehicle charge schedules."""
         return await self._vehicle.set_charge_schedules(schedules)
 
+    @with_error_wrapping
+    async def sound_horn(self) -> None:
+        """Start vehicle horn."""
+        await self._vehicle.start_horn()
+
+    @with_error_wrapping
+    async def flash_lights(self) -> None:
+        """Start vehicle lights."""
+        await self._vehicle.start_lights()
+
 
 COORDINATORS: tuple[RenaultCoordinatorDescription, ...] = (
     RenaultCoordinatorDescription(
@@ -221,6 +250,12 @@ COORDINATORS: tuple[RenaultCoordinatorDescription, ...] = (
         update_method=lambda x: x.get_charge_mode,
     ),
     RenaultCoordinatorDescription(
+        endpoint="charging-settings",
+        key="charging_settings",
+        requires_electricity=True,
+        update_method=lambda x: x.get_charging_settings,
+    ),
+    RenaultCoordinatorDescription(
         endpoint="lock-status",
         key="lock_status",
         update_method=lambda x: x.get_lock_status,
@@ -229,5 +264,10 @@ COORDINATORS: tuple[RenaultCoordinatorDescription, ...] = (
         endpoint="res-state",
         key="res_state",
         update_method=lambda x: x.get_res_state,
+    ),
+    RenaultCoordinatorDescription(
+        endpoint="pressure",
+        key="pressure",
+        update_method=lambda x: x.get_tyre_pressure,
     ),
 )

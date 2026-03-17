@@ -12,8 +12,8 @@ from awesomeversion import AwesomeVersion, AwesomeVersionStrategy
 
 from homeassistant.const import __version__ as ha_version
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.util import dt as dt_util
 from homeassistant.util.async_ import run_callback_threadsafe
-import homeassistant.util.dt as dt_util
 from homeassistant.util.event_type import EventType
 from homeassistant.util.hass_dict import HassKey
 
@@ -251,7 +251,7 @@ class IssueRegistry(BaseRegistry):
         """
         self._store.make_read_only()
 
-    async def async_load(self) -> None:
+    async def _async_load(self) -> None:
         """Load the issue registry."""
         data = await self._store.async_load()
 
@@ -314,12 +314,17 @@ def async_get(hass: HomeAssistant) -> IssueRegistry:
     return IssueRegistry(hass)
 
 
-async def async_load(hass: HomeAssistant, *, read_only: bool = False) -> None:
+async def async_load(
+    hass: HomeAssistant,
+    *,
+    read_only: bool = False,
+    load_empty: bool = False,
+) -> None:
     """Load issue registry."""
     ir = async_get(hass)
     if read_only:  # only used in for check config script
         ir.make_read_only()
-    return await ir.async_load()
+    await ir.async_load(load_empty=load_empty)
 
 
 @callback

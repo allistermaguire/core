@@ -1,6 +1,7 @@
 """Support for Wyoming intent recognition services."""
 
 import logging
+from typing import Literal
 
 from wyoming.asr import Transcript
 from wyoming.client import AsyncTcpClient
@@ -10,10 +11,11 @@ from wyoming.intent import Intent, NotRecognized
 
 from homeassistant.components import conversation
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import intent
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util import ulid
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import ulid as ulid_util
 
 from .const import DOMAIN
 from .data import WyomingService
@@ -26,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Wyoming conversation."""
     item: DomainDataItem = hass.data[DOMAIN][config_entry.entry_id]
@@ -89,22 +91,31 @@ class WyomingConversationEntity(
         self._attr_unique_id = f"{config_entry.entry_id}-conversation"
 
     @property
-    def supported_languages(self) -> list[str]:
+    def supported_languages(self) -> list[str] | Literal["*"]:
         """Return a list of supported languages."""
+        if not self._supported_languages:
+            return MATCH_ALL
+
         return self._supported_languages
 
     async def async_process(
         self, user_input: conversation.ConversationInput
     ) -> conversation.ConversationResult:
         """Process a sentence."""
-        conversation_id = user_input.conversation_id or ulid.ulid_now()
+        conversation_id = user_input.conversation_id or ulid_util.ulid_now()
         intent_response = intent.IntentResponse(language=user_input.language)
+
+        context = {"conversation_id": conversation_id}
+        if user_input.satellite_id:
+            context["satellite_id"] = user_input.satellite_id
 
         try:
             async with AsyncTcpClient(self.service.host, self.service.port) as client:
                 await client.write_event(
                     Transcript(
-                        user_input.text, context={"conversation_id": conversation_id}
+                        user_input.text,
+                        context=context,
+                        language=user_input.language,
                     ).event()
                 )
 
@@ -138,6 +149,8 @@ class WyomingConversationEntity(
                             intent_slots,
                             text_input=user_input.text,
                             language=user_input.language,
+                            satellite_id=user_input.satellite_id,
+                            device_id=user_input.device_id,
                         )
 
                         if (not intent_response.speech) and recognized_intent.text:
@@ -149,21 +162,21 @@ class WyomingConversationEntity(
                         not_recognized = NotRecognized.from_event(event)
                         intent_response.async_set_error(
                             intent.IntentResponseErrorCode.NO_INTENT_MATCH,
-                            not_recognized.text,
+                            not_recognized.text or "",
                         )
                         break
 
                     if Handled.is_type(event.type):
                         # Success
                         handled = Handled.from_event(event)
-                        intent_response.async_set_speech(handled.text)
+                        intent_response.async_set_speech(handled.text or "")
                         break
 
                     if NotHandled.is_type(event.type):
                         not_handled = NotHandled.from_event(event)
                         intent_response.async_set_error(
                             intent.IntentResponseErrorCode.FAILED_TO_HANDLE,
-                            not_handled.text,
+                            not_handled.text or "",
                         )
                         break
 

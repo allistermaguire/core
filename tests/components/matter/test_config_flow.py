@@ -5,17 +5,19 @@ from __future__ import annotations
 from collections.abc import Generator
 from ipaddress import ip_address
 from unittest.mock import AsyncMock, MagicMock, call, patch
+from uuid import uuid4
 
 from aiohasupervisor import SupervisorError
+from aiohasupervisor.models import Discovery
 from matter_server.client.exceptions import CannotConnect, InvalidServerVersion
 import pytest
 
 from homeassistant import config_entries
-from homeassistant.components.hassio import HassioAPIError, HassioServiceInfo
 from homeassistant.components.matter.const import ADDON_SLUG, DOMAIN
-from homeassistant.components.zeroconf import ZeroconfServiceInfo
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.service_info.hassio import HassioServiceInfo
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from tests.common import MockConfigEntry
 
@@ -290,7 +292,19 @@ async def test_zeroconf_discovery_not_onboarded_not_supervisor(
 
 
 @pytest.mark.parametrize("zeroconf_info", [ZEROCONF_INFO_TCP, ZEROCONF_INFO_UDP])
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_zeroconf_not_onboarded_already_discovered(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -328,7 +342,19 @@ async def test_zeroconf_not_onboarded_already_discovered(
 
 
 @pytest.mark.parametrize("zeroconf_info", [ZEROCONF_INFO_TCP, ZEROCONF_INFO_UDP])
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_zeroconf_not_onboarded_running(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -360,7 +386,19 @@ async def test_zeroconf_not_onboarded_running(
 
 
 @pytest.mark.parametrize("zeroconf_info", [ZEROCONF_INFO_TCP, ZEROCONF_INFO_UDP])
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_zeroconf_not_onboarded_installed(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -394,18 +432,28 @@ async def test_zeroconf_not_onboarded_installed(
 
 
 @pytest.mark.parametrize("zeroconf_info", [ZEROCONF_INFO_TCP, ZEROCONF_INFO_UDP])
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
+@pytest.mark.usefixtures("supervisor", "addon_not_installed", "not_onboarded")
 async def test_zeroconf_not_onboarded_not_installed(
     hass: HomeAssistant,
-    supervisor: MagicMock,
     addon_info: AsyncMock,
     addon_store_info: AsyncMock,
-    addon_not_installed: AsyncMock,
     install_addon: AsyncMock,
     start_addon: AsyncMock,
     client_connect: AsyncMock,
     setup_entry: AsyncMock,
-    not_onboarded: MagicMock,
     zeroconf_info: ZeroconfServiceInfo,
 ) -> None:
     """Test flow Zeroconf discovery when not onboarded and add-on not installed."""
@@ -417,7 +465,7 @@ async def test_zeroconf_not_onboarded_not_installed(
     await hass.async_block_till_done()
 
     assert addon_info.call_count == 0
-    assert addon_store_info.call_count == 2
+    assert addon_store_info.call_count == 1
     assert install_addon.call_args == call("core_matter_server")
     assert start_addon.call_args == call("core_matter_server")
     assert client_connect.call_count == 1
@@ -431,7 +479,19 @@ async def test_zeroconf_not_onboarded_not_installed(
     assert setup_entry.call_count == 1
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_supervisor_discovery(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -469,7 +529,19 @@ async def test_supervisor_discovery(
 
 @pytest.mark.parametrize(
     ("discovery_info", "error"),
-    [({"config": ADDON_DISCOVERY_INFO}, SupervisorError())],
+    [
+        (
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
+            SupervisorError(),
+        )
+    ],
 )
 async def test_supervisor_discovery_addon_info_failed(
     hass: HomeAssistant,
@@ -502,7 +574,19 @@ async def test_supervisor_discovery_addon_info_failed(
     assert result["reason"] == "addon_info_failed"
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_clean_supervisor_discovery_on_user_create(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -793,7 +877,19 @@ async def test_not_addon(
     assert setup_entry.call_count == 1
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_addon_running(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -839,8 +935,15 @@ async def test_addon_running(
     ),
     [
         (
-            {"config": ADDON_DISCOVERY_INFO},
-            HassioAPIError(),
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
+            SupervisorError(),
             None,
             None,
             "addon_get_discovery_info_failed",
@@ -848,7 +951,14 @@ async def test_addon_running(
             False,
         ),
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             None,
             CannotConnect(Exception("Boom")),
             None,
@@ -857,7 +967,7 @@ async def test_addon_running(
             True,
         ),
         (
-            None,
+            [],
             None,
             None,
             None,
@@ -866,7 +976,14 @@ async def test_addon_running(
             False,
         ),
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             None,
             None,
             SupervisorError(),
@@ -925,8 +1042,15 @@ async def test_addon_running_failures(
     ),
     [
         (
-            {"config": ADDON_DISCOVERY_INFO},
-            HassioAPIError(),
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
+            SupervisorError(),
             None,
             None,
             "addon_get_discovery_info_failed",
@@ -934,7 +1058,14 @@ async def test_addon_running_failures(
             False,
         ),
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             None,
             CannotConnect(Exception("Boom")),
             None,
@@ -943,7 +1074,7 @@ async def test_addon_running_failures(
             True,
         ),
         (
-            None,
+            [],
             None,
             None,
             None,
@@ -952,7 +1083,14 @@ async def test_addon_running_failures(
             False,
         ),
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             None,
             None,
             SupervisorError(),
@@ -996,7 +1134,19 @@ async def test_addon_running_failures_zeroconf(
     assert result["reason"] == abort_reason
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_addon_running_already_configured(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -1034,7 +1184,19 @@ async def test_addon_running_already_configured(
     assert setup_entry.call_count == 1
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_addon_installed(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -1084,21 +1246,35 @@ async def test_addon_installed(
     ),
     [
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             SupervisorError(),
             None,
             False,
             False,
         ),
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             None,
             CannotConnect(Exception("Boom")),
             True,
             True,
         ),
         (
-            None,
+            [],
             None,
             None,
             True,
@@ -1159,21 +1335,35 @@ async def test_addon_installed_failures(
     ),
     [
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             SupervisorError(),
             None,
             False,
             False,
         ),
         (
-            {"config": ADDON_DISCOVERY_INFO},
+            [
+                Discovery(
+                    addon="core_matter_server",
+                    service="matter",
+                    uuid=uuid4(),
+                    config=ADDON_DISCOVERY_INFO,
+                )
+            ],
             None,
             CannotConnect(Exception("Boom")),
             True,
             True,
         ),
         (
-            None,
+            [],
             None,
             None,
             True,
@@ -1213,7 +1403,19 @@ async def test_addon_installed_failures_zeroconf(
     assert result["reason"] == "addon_start_failed"
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_addon_installed_already_configured(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -1259,7 +1461,19 @@ async def test_addon_installed_already_configured(
     assert setup_entry.call_count == 1
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_addon_not_installed(
     hass: HomeAssistant,
     supervisor: MagicMock,
@@ -1318,7 +1532,7 @@ async def test_addon_not_installed_failures(
     install_addon: AsyncMock,
 ) -> None:
     """Test add-on install failure."""
-    install_addon.side_effect = HassioAPIError()
+    install_addon.side_effect = SupervisorError()
 
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -1355,7 +1569,7 @@ async def test_addon_not_installed_failures_zeroconf(
     zeroconf_info: ZeroconfServiceInfo,
 ) -> None:
     """Test add-on install failure."""
-    install_addon.side_effect = HassioAPIError()
+    install_addon.side_effect = SupervisorError()
 
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_ZEROCONF}, data=zeroconf_info
@@ -1368,7 +1582,19 @@ async def test_addon_not_installed_failures_zeroconf(
     assert result["reason"] == "addon_install_failed"
 
 
-@pytest.mark.parametrize("discovery_info", [{"config": ADDON_DISCOVERY_INFO}])
+@pytest.mark.parametrize(
+    "discovery_info",
+    [
+        [
+            Discovery(
+                addon="core_matter_server",
+                service="matter",
+                uuid=uuid4(),
+                config=ADDON_DISCOVERY_INFO,
+            )
+        ]
+    ],
+)
 async def test_addon_not_installed_already_configured(
     hass: HomeAssistant,
     supervisor: MagicMock,

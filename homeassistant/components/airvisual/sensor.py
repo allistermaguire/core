@@ -8,7 +8,6 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_LATITUDE,
     ATTR_LONGITUDE,
@@ -23,11 +22,10 @@ from homeassistant.const import (
     CONF_STATE,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import AirVisualConfigEntry
 from .const import CONF_CITY
+from .coordinator import AirVisualConfigEntry, AirVisualDataUpdateCoordinator
 from .entity import AirVisualEntity
 
 ATTR_CITY = "city"
@@ -108,12 +106,12 @@ POLLUTANT_UNITS = {
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: AirVisualConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up AirVisual sensors based on a config entry."""
     coordinator = entry.runtime_data
     async_add_entities(
-        AirVisualGeographySensor(coordinator, entry, description, locale)
+        AirVisualGeographySensor(coordinator, description, locale)
         for locale in GEOGRAPHY_SENSOR_LOCALES
         for description in GEOGRAPHY_SENSOR_DESCRIPTIONS
     )
@@ -124,14 +122,14 @@ class AirVisualGeographySensor(AirVisualEntity, SensorEntity):
 
     def __init__(
         self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
+        coordinator: AirVisualDataUpdateCoordinator,
         description: SensorEntityDescription,
         locale: str,
     ) -> None:
         """Initialize."""
-        super().__init__(coordinator, entry, description)
+        super().__init__(coordinator, description)
 
+        entry = coordinator.config_entry
         self._attr_extra_state_attributes.update(
             {
                 ATTR_CITY: entry.data.get(CONF_CITY),
@@ -182,16 +180,16 @@ class AirVisualGeographySensor(AirVisualEntity, SensorEntity):
         #
         # We use any coordinates in the config entry and, in the case of a geography by
         # name, we fall back to the latitude longitude provided in the coordinator data:
-        latitude = self._entry.data.get(
+        latitude = self.coordinator.config_entry.data.get(
             CONF_LATITUDE,
             self.coordinator.data["location"]["coordinates"][1],
         )
-        longitude = self._entry.data.get(
+        longitude = self.coordinator.config_entry.data.get(
             CONF_LONGITUDE,
             self.coordinator.data["location"]["coordinates"][0],
         )
 
-        if self._entry.options[CONF_SHOW_ON_MAP]:
+        if self.coordinator.config_entry.options[CONF_SHOW_ON_MAP]:
             self._attr_extra_state_attributes[ATTR_LATITUDE] = latitude
             self._attr_extra_state_attributes[ATTR_LONGITUDE] = longitude
             self._attr_extra_state_attributes.pop("lati", None)

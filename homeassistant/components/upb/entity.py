@@ -1,5 +1,7 @@
 """Support the UPB PIM."""
 
+from typing import Any
+
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
@@ -25,12 +27,12 @@ class UpbEntity(Entity):
         return self._unique_id
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return the default attributes of the element."""
         return self._element.as_dict()
 
     @property
-    def available(self):
+    def available(self) -> bool:
         """Is the entity available to be updated."""
         return self._upb.is_connected()
 
@@ -43,7 +45,7 @@ class UpbEntity(Entity):
         self._element_changed(element, changeset)
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Register callback for UPB changes and update entity state."""
         self._element.add_callback(self._element_callback)
         self._element_callback(self._element, {})

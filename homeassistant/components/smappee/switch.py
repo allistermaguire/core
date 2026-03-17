@@ -5,7 +5,7 @@ from typing import Any
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import SmappeeConfigEntry
 from .const import DOMAIN
@@ -16,7 +16,7 @@ SWITCH_PREFIX = "Switch"
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: SmappeeConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the Smappee Comfort Plugs."""
     smappee_base = config_entry.runtime_data
@@ -103,7 +103,7 @@ class SmappeeActuator(SwitchEntity):
         )
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return true if switch is on."""
         if self._actuator_type == "INFINITY_OUTPUT_MODULE":
             return (

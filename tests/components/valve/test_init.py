@@ -22,7 +22,7 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from tests.common import (
     MockConfigEntry,
@@ -174,7 +174,7 @@ def mock_config_entry(hass: HomeAssistant) -> tuple[MockConfigEntry, list[ValveE
     async def async_setup_entry_platform(
         hass: HomeAssistant,
         config_entry: ConfigEntry,
-        async_add_entities: AddEntitiesCallback,
+        async_add_entities: AddConfigEntryEntitiesCallback,
     ) -> None:
         """Set up test platform via config entry."""
         async_add_entities(entities)
@@ -239,6 +239,7 @@ async def test_services(
     # call basic toggle services
     await call_service(hass, SERVICE_TOGGLE, ent1)
     await call_service(hass, SERVICE_TOGGLE, ent2)
+    await hass.async_block_till_done()
 
     # entities without stop should be closed and with stop should be closing
     assert is_closed(hass, ent1)
@@ -258,6 +259,7 @@ async def test_services(
     # call basic toggle services
     await call_service(hass, SERVICE_TOGGLE, ent1)
     await call_service(hass, SERVICE_TOGGLE, ent2)
+    await hass.async_block_till_done()
 
     # entities should be in correct state depending on the SUPPORT_STOP feature and valve position
     assert is_closed(hass, ent1)
@@ -266,6 +268,7 @@ async def test_services(
     assert is_closed(hass, ent2)
 
     await call_service(hass, SERVICE_SET_VALVE_POSITION, ent2, 50)
+    await hass.async_block_till_done()
     assert is_opening(hass, ent2)
 
 

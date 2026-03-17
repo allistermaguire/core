@@ -6,7 +6,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DATA_CONFIG_ENTRIES, DATA_DEVICE, DATA_UPDATED, DOMAIN
 from .entity import YeelightEntity
@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Yeelight from a config entry."""
     device = hass.data[DOMAIN][DATA_CONFIG_ENTRIES][config_entry.entry_id][DATA_DEVICE]
@@ -48,6 +48,6 @@ class YeelightNightlightModeSensor(YeelightEntity, BinarySensorEntity):
         return f"{self._unique_id}-nightlight_sensor"
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return true if nightlight mode is on."""
         return self._device.is_nightlight_enabled

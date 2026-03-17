@@ -6,6 +6,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -19,6 +20,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Charge port door',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -26,6 +28,7 @@
     'original_name': 'Charge port door',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'charge_state_charge_port_door_open',
     'unique_id': 'LRWXF7EK4KC700000-charge_state_charge_port_door_open',
@@ -37,6 +40,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Charge port door',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -54,6 +58,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -67,6 +72,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Frunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -74,6 +80,7 @@
     'original_name': 'Frunk',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 1>,
     'translation_key': 'vehicle_state_ft',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_ft',
@@ -85,6 +92,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Frunk',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 1>,
     }),
     'context': <ANY>,
@@ -102,6 +110,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -115,6 +124,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Sunroof',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -122,6 +132,7 @@
     'original_name': 'Sunroof',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 11>,
     'translation_key': 'vehicle_state_sun_roof_state',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_sun_roof_state',
@@ -133,6 +144,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Sunroof',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 11>,
     }),
     'context': <ANY>,
@@ -150,6 +162,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -163,6 +176,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Trunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -170,6 +184,7 @@
     'original_name': 'Trunk',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'vehicle_state_rt',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_rt',
@@ -181,6 +196,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Trunk',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -198,6 +214,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -211,6 +228,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Windows',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -218,6 +236,7 @@
     'original_name': 'Windows',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'windows',
     'unique_id': 'LRWXF7EK4KC700000-windows',
@@ -229,6 +248,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Windows',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -246,6 +266,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -259,6 +280,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Charge port door',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -266,6 +288,7 @@
     'original_name': 'Charge port door',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'charge_state_charge_port_door_open',
     'unique_id': 'LRWXF7EK4KC700000-charge_state_charge_port_door_open',
@@ -277,6 +300,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Charge port door',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -294,6 +318,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -307,6 +332,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Frunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -314,6 +340,7 @@
     'original_name': 'Frunk',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 1>,
     'translation_key': 'vehicle_state_ft',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_ft',
@@ -325,6 +352,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Frunk',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 1>,
     }),
     'context': <ANY>,
@@ -342,6 +370,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -355,6 +384,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Sunroof',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -362,6 +392,7 @@
     'original_name': 'Sunroof',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 11>,
     'translation_key': 'vehicle_state_sun_roof_state',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_sun_roof_state',
@@ -373,6 +404,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Sunroof',
+      'is_closed': None,
       'supported_features': <CoverEntityFeature: 11>,
     }),
     'context': <ANY>,
@@ -390,6 +422,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -403,6 +436,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Trunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -410,6 +444,7 @@
     'original_name': 'Trunk',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'vehicle_state_rt',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_rt',
@@ -421,6 +456,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Trunk',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -438,6 +474,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -451,6 +488,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Windows',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -458,6 +496,7 @@
     'original_name': 'Windows',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': <CoverEntityFeature: 3>,
     'translation_key': 'windows',
     'unique_id': 'LRWXF7EK4KC700000-windows',
@@ -469,6 +508,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Windows',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 3>,
     }),
     'context': <ANY>,
@@ -486,6 +526,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -499,6 +540,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Charge port door',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -506,6 +548,7 @@
     'original_name': 'Charge port door',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': 0,
     'translation_key': 'charge_state_charge_port_door_open',
     'unique_id': 'LRWXF7EK4KC700000-charge_state_charge_port_door_open',
@@ -517,6 +560,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Charge port door',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 0>,
     }),
     'context': <ANY>,
@@ -534,6 +578,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -547,6 +592,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Frunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -554,6 +600,7 @@
     'original_name': 'Frunk',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': 0,
     'translation_key': 'vehicle_state_ft',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_ft',
@@ -565,6 +612,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Frunk',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 0>,
     }),
     'context': <ANY>,
@@ -582,6 +630,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -595,6 +644,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Sunroof',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -602,6 +652,7 @@
     'original_name': 'Sunroof',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': 0,
     'translation_key': 'vehicle_state_sun_roof_state',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_sun_roof_state',
@@ -613,6 +664,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Sunroof',
+      'is_closed': False,
       'supported_features': <CoverEntityFeature: 0>,
     }),
     'context': <ANY>,
@@ -630,6 +682,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -643,6 +696,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Trunk',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.DOOR: 'door'>,
@@ -650,6 +704,7 @@
     'original_name': 'Trunk',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': 0,
     'translation_key': 'vehicle_state_rt',
     'unique_id': 'LRWXF7EK4KC700000-vehicle_state_rt',
@@ -661,6 +716,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'door',
       'friendly_name': 'Test Trunk',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 0>,
     }),
     'context': <ANY>,
@@ -678,6 +734,7 @@
     'area_id': None,
     'capabilities': None,
     'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
     'device_class': None,
     'device_id': <ANY>,
     'disabled_by': None,
@@ -691,6 +748,7 @@
     'labels': set({
     }),
     'name': None,
+    'object_id_base': 'Windows',
     'options': dict({
     }),
     'original_device_class': <CoverDeviceClass.WINDOW: 'window'>,
@@ -698,6 +756,7 @@
     'original_name': 'Windows',
     'platform': 'tesla_fleet',
     'previous_unique_id': None,
+    'suggested_object_id': None,
     'supported_features': 0,
     'translation_key': 'windows',
     'unique_id': 'LRWXF7EK4KC700000-windows',
@@ -709,6 +768,7 @@
     'attributes': ReadOnlyDict({
       'device_class': 'window',
       'friendly_name': 'Test Windows',
+      'is_closed': True,
       'supported_features': <CoverEntityFeature: 0>,
     }),
     'context': <ANY>,
