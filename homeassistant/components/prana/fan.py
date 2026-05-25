@@ -21,8 +21,8 @@ from homeassistant.util.percentage import (
 )
 from homeassistant.util.scaling import int_states_in_range
 
-from . import PranaConfigEntry
-from .entity import PranaBaseEntity, PranaCoordinator
+from .coordinator import PranaConfigEntry, PranaCoordinator
+from .entity import PranaBaseEntity
 
 PARALLEL_UPDATES = 1
 
@@ -106,7 +106,8 @@ class PranaFan(PranaBaseEntity, FanEntity):
     @property
     def _api_target_key(self) -> str:
         """Return the correct target key for API commands based on bounded state."""
-        # If the device is in bound mode, both supply and extract fans control the same bounded fan speeds.
+        # If the device is in bound mode, both supply and
+        # extract fans control the same bounded fan speeds.
         if self.coordinator.data.bound:
             return PranaFanType.BOUNDED
         # Otherwise, return the specific fan type (supply or extract) for API commands.
